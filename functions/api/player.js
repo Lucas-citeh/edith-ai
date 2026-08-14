@@ -42,9 +42,25 @@ export async function onRequestGet({ request }) {
     if (name) {
       const s = await fetch(`${SPORTSDB}/searchplayers.php?p=${encodeURIComponent(name)}`);
       const sj = await s.json();
-      const p0 = (sj.player || [])[0];
+      // Prefer a footballer at a real club over free agents / other sports
+      // when several people share the name.
+      const all = sj.player || [];
+      const soccer = all.filter((p) => (p.strSport || "").toLowerCase() === "soccer");
+      const pool = soccer.length ? soccer : all;
+      const p0 = pool.find((p) => p.strTeam && !p.strTeam.startsWith("_")) || pool[0];
       if (!p0) return json({ error: "player_not_found", name });
       let num = p0.strNumber && p0.strNumber !== "null" ? p0.strNumber : null;
+      // The detailed player record carries the shirt number even when search doesn't.
+      if (!num && p0.idPlayer) {
+        try {
+          const dr = await fetch(`${SPORTSDB}/lookupplayer.php?id=${p0.idPlayer}`);
+          const dj = await dr.json();
+          const det = (dj.players || [])[0];
+          if (det && det.strNumber && det.strNumber !== "null") num = det.strNumber;
+        } catch {
+          /* fall through to squad lookup */
+        }
+      }
       if (!num && p0.idTeam) {
         const squad = await squadOf(p0.idTeam);
         const match = squad.find((pl) => nameMatch(pl.strPlayer, p0.strPlayer));
