@@ -49,6 +49,27 @@ With Ollama running, just start EDITH normally — she detects it and uses it au
 (console shows `FREE local AI via Ollama`). Everything runs on your machine; nothing is sent
 to the cloud. Swap models with `OLLAMA_MODEL=<name>` in `.env` (e.g. `llama3.1`, `qwen2.5`).
 
+## Deploy as a public website (free, always-on) — Cloudflare Pages + Groq
+
+The `functions/` folder makes EDITH deployable as an always-on public site whose brain
+is **Groq's free cloud AI** (no local Mac needed). Free tier, no credit card.
+
+1. **Get a free Groq API key** → https://console.groq.com → sign in → *API Keys* → *Create*. Copy it (starts with `gsk_`).
+2. **Create a Cloudflare account** (free) → https://dash.cloudflare.com
+3. In Cloudflare: **Workers & Pages → Create → Pages → Connect to Git**, authorise GitHub, pick the **`edith-ai`** repo.
+4. Build settings:
+   - Framework preset: **None**
+   - Build command: **(leave blank)**
+   - Build output directory: **`public`**
+5. Expand **Environment variables** and add:
+   - `GROQ_API_KEY` = *your Groq key*
+   - *(optional)* `GROQ_MODEL` = `llama-3.3-70b-versatile`
+6. **Save and Deploy.** In ~1 minute EDITH is live at `https://edith-ai.pages.dev` — voice and all.
+
+If you add the key *after* the first deploy, set it in **Settings → Environment variables → Production**, then **Retry deployment** so the functions pick it up.
+
+Rate limits: Groq's free tier caps requests — if it's hit, EDITH says "busy, try again" and never bills you.
+
 ## Setup
 
 ```bash
