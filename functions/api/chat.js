@@ -14,6 +14,18 @@ Personality and voice:
 
 Open the very first message of a session with a brief power-on greeting, then answer normally after that.`;
 
+// EDITH works with any free, OpenAI-compatible AI provider. Set whichever key
+// you can get — the first one found wins. All stream in the same format.
+export function resolveProvider(env) {
+  if (env.GROQ_API_KEY)
+    return { name: "groq", url: "https://api.groq.com/openai/v1/chat/completions", key: env.GROQ_API_KEY, model: env.AI_MODEL || "llama-3.3-70b-versatile" };
+  if (env.GEMINI_API_KEY)
+    return { name: "gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", key: env.GEMINI_API_KEY, model: env.AI_MODEL || "gemini-2.0-flash" };
+  if (env.OPENROUTER_API_KEY)
+    return { name: "openrouter", url: "https://openrouter.ai/api/v1/chat/completions", key: env.OPENROUTER_API_KEY, model: env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct:free" };
+  return null;
+}
+
 export async function onRequestPost({ request, env }) {
   let messages;
   try {
@@ -26,21 +38,22 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
-  if (!env.GROQ_API_KEY) {
+  const provider = resolveProvider(env);
+  if (!provider) {
     return new Response(
-      "My cloud brain isn't wired up yet — the site owner still needs to add a GROQ_API_KEY.",
+      "My cloud brain isn't wired up yet — the site owner still needs to add a free AI key (GROQ_API_KEY, GEMINI_API_KEY, or OPENROUTER_API_KEY).",
       { status: 200, headers: { "Content-Type": "text/plain; charset=utf-8" } }
     );
   }
 
-  const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const upstream = await fetch(provider.url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${env.GROQ_API_KEY}`,
+      Authorization: `Bearer ${provider.key}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
+      model: provider.model,
       stream: true,
       max_tokens: 1024,
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],

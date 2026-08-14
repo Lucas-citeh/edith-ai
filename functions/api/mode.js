@@ -3,12 +3,14 @@
 // added a GROQ_API_KEY yet, we report "local" so the page falls back to the
 // built-in rule brain instead of erroring.
 
+import { resolveProvider } from "./chat.js";
+
 export function onRequestGet({ env }) {
-  const configured = !!env.GROQ_API_KEY;
+  const provider = resolveProvider(env);
   return new Response(
     JSON.stringify({
-      backend: configured ? "cloud" : "local",
-      model: configured ? env.GROQ_MODEL || "llama-3.3-70b-versatile" : null,
+      backend: provider ? "cloud" : "local",
+      model: provider ? provider.model : null,
     }),
     { headers: { "Content-Type": "application/json" } }
   );

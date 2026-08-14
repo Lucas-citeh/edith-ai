@@ -52,23 +52,32 @@ to the cloud. Swap models with `OLLAMA_MODEL=<name>` in `.env` (e.g. `llama3.1`,
 ## Deploy as a public website (free, always-on) — Cloudflare Pages + Groq
 
 The `functions/` folder makes EDITH deployable as an always-on public site whose brain
-is **Groq's free cloud AI** (no local Mac needed). Free tier, no credit card.
+is a **free cloud AI** (no local Mac needed). Free tier, no credit card.
 
-1. **Get a free Groq API key** → https://console.groq.com → sign in → *API Keys* → *Create*. Copy it (starts with `gsk_`).
-2. **Create a Cloudflare account** (free) → https://dash.cloudflare.com
-3. In Cloudflare: **Workers & Pages → Create → Pages → Connect to Git**, authorise GitHub, pick the **`edith-ai`** repo.
-4. Build settings:
+**Pick any one free AI provider** (whichever you can log into) — set its key as an
+environment variable and EDITH uses it automatically:
+
+| Provider | Get a key | Env var to set | Notes |
+|---|---|---|---|
+| **Google Gemini** (easiest — uses your Google account) | https://aistudio.google.com/apikey | `GEMINI_API_KEY` | Free, no card |
+| **Groq** (Llama 3.3 70B) | https://console.groq.com | `GROQ_API_KEY` | Free, no card |
+| **OpenRouter** (free models) | https://openrouter.ai/keys | `OPENROUTER_API_KEY` | Free tier |
+
+Then deploy on Cloudflare Pages:
+
+1. **Create a Cloudflare account** (free) → https://dash.cloudflare.com
+2. **Workers & Pages → Create → Pages → Connect to Git**, authorise GitHub, pick **`edith-ai`**.
+3. Build settings:
    - Framework preset: **None**
    - Build command: **(leave blank)**
    - Build output directory: **`public`**
-5. Expand **Environment variables** and add:
-   - `GROQ_API_KEY` = *your Groq key*
-   - *(optional)* `GROQ_MODEL` = `llama-3.3-70b-versatile`
-6. **Save and Deploy.** In ~1 minute EDITH is live at `https://edith-ai.pages.dev` — voice and all.
+4. Expand **Environment variables** and add the one key from the table above (e.g. `GEMINI_API_KEY`).
+   - *(optional)* `AI_MODEL` to override the default model.
+5. **Save and Deploy.** In ~1 minute EDITH is live at `https://edith-ai.pages.dev` — voice and all.
 
-If you add the key *after* the first deploy, set it in **Settings → Environment variables → Production**, then **Retry deployment** so the functions pick it up.
+If you add the key *after* the first deploy, set it in **Settings → Environment variables → Production**, then **Retry deployment**.
 
-Rate limits: Groq's free tier caps requests — if it's hit, EDITH says "busy, try again" and never bills you.
+Free tiers have rate limits — if hit, EDITH says "busy, try again" and never bills you.
 
 ## Setup
 
