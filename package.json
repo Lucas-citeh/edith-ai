@@ -1,0 +1,13 @@
+{
+  "name": "edith-ai",
+  "version": "1.0.0",
+  "description": "E.D.I.T.H. — a Spider-Man: Far From Home style AI assistant with a holographic HUD, voice control, wake word, and Claude as the brain.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "dotenv": "^17.0.0"
+  }
+}

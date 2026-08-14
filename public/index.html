@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EDITH</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="grid-bg"></div>
+    <div class="vignette"></div>
+
+    <!-- Holographic projection overlays -->
+    <div class="projection"></div>
+    <div class="scanlines holo-frame"></div>
+    <div class="holo-sweep"></div>
+    <div class="holo-flicker"></div>
+    <div class="motes">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+    </div>
+
+    <!-- Decorative JARVIS-style widgets (non-interactive ambiance) -->
+    <div class="hud-decor">
+      <!-- top-left concentric dashed rings + crosshair -->
+      <div class="d-rings tl">
+        <span class="dr dr1"></span><span class="dr dr2"></span><span class="dr dr3"></span>
+        <span class="d-cross"></span>
+      </div>
+
+      <!-- left red alert panel -->
+      <div class="d-alert">
+        <div class="d-alert-h">⚠ CRITICAL</div>
+        <div class="d-alert-b">
+          REPULSOR NODE 04<br />VERTICAL STABILIZER<br />
+          <span class="blink">SIGNAL LOSS</span><br />OVERRIDE // MANUAL
+        </div>
+      </div>
+
+      <!-- floating data readout -->
+      <div class="d-readout">
+        <div>SYS.CORE&nbsp;&nbsp;<b>ONLINE</b></div>
+        <div>PWR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;100%</div>
+        <div>THRML&nbsp;&nbsp;&nbsp;&nbsp;36.4°</div>
+        <div>UPLINK&nbsp;&nbsp;&nbsp;STABLE</div>
+        <div>NODES&nbsp;&nbsp;&nbsp;&nbsp;12/12</div>
+      </div>
+
+      <!-- hero compass dial -->
+      <div class="d-compass">
+        <span class="dc-ring"></span>
+        <span class="dc-ticks"></span>
+        <span class="dc-arc"></span>
+        <span class="dc-arc2"></span>
+        <span class="dc-core"></span>
+      </div>
+
+      <!-- bottom-left pie + date -->
+      <div class="d-pie"></div>
+      <div class="d-datebox">
+        <div class="dd-num">21</div>
+        <div class="dd-day">TUESDAY</div>
+      </div>
+      <div class="d-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+      <!-- radar sweep -->
+      <div class="d-radar"><span class="d-sweep"></span></div>
+
+      <!-- red targeting reticle -->
+      <div class="d-reticle"></div>
+
+      <!-- bottom-right concentric rings -->
+      <div class="d-rings br">
+        <span class="dr dr1"></span><span class="dr dr2"></span><span class="dr dr3"></span>
+      </div>
+    </div>
+
+    <!-- Top status bar -->
+    <header class="hud-top">
+      <div class="brand">
+        <span class="brand-main">EDITH</span>
+        <span class="brand-sub">Even Dead I'm The Hero</span>
+      </div>
+      <div class="status-cluster">
+        <div class="status-pill" id="statusPill">
+          <span class="dot"></span><span id="statusText">STANDBY</span>
+        </div>
+        <div class="clock" id="clock">--:--:--</div>
+      </div>
+    </header>
+
+    <!-- Central reactor / orb -->
+    <main class="stage">
+      <div class="reactor" id="reactor">
+        <div class="ring ring-outer"></div>
+        <div class="ring ring-mid"></div>
+        <div class="ring ring-inner"></div>
+        <div class="ticks"></div>
+        <div class="core">
+          <div class="core-glow"></div>
+          <canvas id="viz" width="220" height="220"></canvas>
+        </div>
+        <div class="scan-sweep"></div>
+      </div>
+
+      <div class="caption" id="caption">Say “EDITH” or tap the reactor to speak.</div>
+    </main>
+
+    <!-- Transcript / conversation log -->
+    <section class="log-panel">
+      <div class="log-head">
+        <span>TRANSCRIPT</span>
+        <button id="clearBtn" class="ghost-btn" title="Clear conversation">CLEAR</button>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <!-- Controls -->
+    <footer class="controls">
+      <button id="micBtn" class="ctl-btn primary">
+        <span class="ico">🎙</span><span class="lbl">HOLD / TAP TO TALK</span>
+      </button>
+
+      <form id="textForm" class="text-input">
+        <input
+          id="textInput"
+          type="text"
+          autocomplete="off"
+          placeholder="…or type a command"
+        />
+        <button type="submit" class="ctl-btn">SEND</button>
+      </form>
+
+      <div class="toggles">
+        <label class="toggle">
+          <input type="checkbox" id="wakeToggle" checked />
+          <span>Wake word “EDITH”</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="voiceToggle" checked />
+          <span>Voice reply</span>
+        </label>
+      </div>
+    </footer>
+
+    <script type="module" src="/edith.js"></script>
+  </body>
+</html>
