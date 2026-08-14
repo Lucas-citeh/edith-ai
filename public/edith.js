@@ -137,6 +137,37 @@ function speak(text) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Time & date always come from the device clock — never the AI brain (which has
+// no real-time access). Answered locally on every version, phone included.
+function tryClock(text) {
+  const t = text.toLowerCase();
+  if (
+    /\bwhat('?s| is)? (the )?time\b/.test(t) ||
+    /\bwhat time is it\b/.test(t) ||
+    /\b(the )?time (is it|right now|now)\b/.test(t) ||
+    /\bgot the time\b/.test(t)
+  ) {
+    const now = new Date();
+    return `It's ${now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}, boss.`;
+  }
+  if (
+    /\bwhat('?s| is)? (the )?date\b/.test(t) ||
+    /\bwhat day is it\b/.test(t) ||
+    /\bwhat('?s| is)? today\b/.test(t) ||
+    /\btoday'?s date\b/.test(t) ||
+    /\bwhat day.*today\b/.test(t)
+  ) {
+    const now = new Date();
+    return `Today is ${now.toLocaleDateString(undefined, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    })}.`;
+  }
+  return null;
+}
+
 // ---------- Asking EDITH (routes to Claude or the local brain) ----------
 async function ask(userText) {
   if (busy || !userText.trim()) return;
@@ -154,7 +185,7 @@ async function ask(userText) {
   try {
     // Live-data questions (shirt numbers, fixtures, results) get real data
     // first, whatever brain is active.
-    const liveReply = (await tryPlayer(userText)) || (await trySports(userText));
+    const liveReply = tryClock(userText) || (await tryPlayer(userText)) || (await trySports(userText));
     let full;
     if (liveReply) {
       full = await typeOut(liveReply, bubble);
@@ -473,6 +504,12 @@ function updateDateTile() {
   const day = document.querySelector(".dd-day");
   if (num) num.textContent = now.getDate();
   if (day) day.textContent = now.toLocaleDateString("en-GB", { weekday: "long" }).toUpperCase();
+  const td = document.getElementById("topdate");
+  if (td) {
+    td.textContent = now
+      .toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })
+      .toUpperCase();
+  }
 }
 setInterval(() => {
   el("clock").textContent = new Date().toLocaleTimeString("en-GB");
