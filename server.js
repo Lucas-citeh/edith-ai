@@ -326,6 +326,58 @@ async function handlePlayer(req, res) {
   }
 }
 
+// Marvel / superhero data via the free akabab superhero-api (no key). Cached
+// in memory for an hour so we don't refetch the whole dataset each time.
+const HERO_URL = "https://cdn.jsdelivr.net/gh/akabab/superhero-api@0.3.0/api/all.json";
+let heroCache = null;
+let heroCacheAt = 0;
+async function allHeroes() {
+  if (heroCache && Date.now() - heroCacheAt < 3600_000) return heroCache;
+  const r = await fetch(HERO_URL);
+  heroCache = await r.json();
+  heroCacheAt = Date.now();
+  return heroCache;
+}
+function findHero(list, name) {
+  const q = name.toLowerCase().trim();
+  const marvel = list.filter((h) => h.biography?.publisher === "Marvel Comics");
+  const norm = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const nq = norm(q);
+  for (const pool of [marvel, list]) {
+    const exact = pool.find((h) => norm(h.name) === nq);
+    if (exact) return exact;
+  }
+  for (const pool of [marvel, list]) {
+    const partial = pool.find((h) => norm(h.name).includes(nq) || nq.includes(norm(h.name)));
+    if (partial) return partial;
+  }
+  return null;
+}
+async function handleMarvel(req, res) {
+  const url = new URL(req.url, "http://x");
+  const name = url.searchParams.get("name") || "";
+  const json = (obj, status = 200) => {
+    res.writeHead(status, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(obj));
+  };
+  try {
+    const h = findHero(await allHeroes(), name);
+    if (!h) return json({ error: "not_found", name });
+    json({
+      name: h.name,
+      fullName: h.biography?.fullName,
+      publisher: h.biography?.publisher,
+      alignment: h.biography?.alignment,
+      firstAppearance: h.biography?.firstAppearance,
+      occupation: h.work?.occupation,
+      powerstats: h.powerstats,
+    });
+  } catch (err) {
+    console.error("Marvel error:", err?.message || err);
+    json({ error: "fetch_failed" }, 502);
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   // Tells the browser which backend is active: claude | ollama | local.
   // Re-detect here so that if EDITH started before Ollama was ready (e.g. at
@@ -346,6 +398,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && req.url.startsWith("/api/sports")) return handleSports(req, res);
   if (req.method === "GET" && req.url.startsWith("/api/player")) return handlePlayer(req, res);
+  if (req.method === "GET" && req.url.startsWith("/api/marvel")) return handleMarvel(req, res);
   if (req.method === "GET") return serveStatic(req, res);
   res.writeHead(405).end("Method not allowed");
 });

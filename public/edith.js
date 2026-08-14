@@ -4,6 +4,7 @@
 import { edithBrain } from "./brain.js";
 import { trySports } from "./sports.js";
 import { tryPlayer } from "./players.js";
+import { tryMarvel } from "./marvel.js";
 
 const el = (id) => document.getElementById(id);
 const reactor = el("reactor");
@@ -185,7 +186,11 @@ async function ask(userText) {
   try {
     // Live-data questions (shirt numbers, fixtures, results) get real data
     // first, whatever brain is active.
-    const liveReply = tryClock(userText) || (await tryPlayer(userText)) || (await trySports(userText));
+    const liveReply =
+      tryClock(userText) ||
+      (await tryPlayer(userText)) ||
+      (await trySports(userText)) ||
+      (await tryMarvel(userText));
     let full;
     if (liveReply) {
       full = await typeOut(liveReply, bubble);
