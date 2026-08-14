@@ -243,6 +243,73 @@ async function handleSports(req, res) {
   }
 }
 
+// Player shirt-number lookup via TheSportsDB. Shirt numbers live on the squad
+// list (lookup_all_players), not the player-search record, so we cross-reference.
+function isRealPlayer(p) {
+  return p.strPosition && !/manager|coach|ceo|president|owner|director|assistant/i.test(p.strPosition);
+}
+async function squadOf(teamId) {
+  const r = await fetch(`${SPORTSDB}/lookup_all_players.php?id=${teamId}`);
+  const j = await r.json();
+  return j.player || [];
+}
+function nameMatch(a, b) {
+  a = (a || "").toLowerCase();
+  b = (b || "").toLowerCase();
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+async function handlePlayer(req, res) {
+  const url = new URL(req.url, "http://x");
+  const name = url.searchParams.get("name");
+  const team = url.searchParams.get("team");
+  const number = url.searchParams.get("number");
+  const json = (obj, status = 200) => {
+    res.writeHead(status, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(obj));
+  };
+
+  try {
+    // Mode B: team + number → who wears it
+    if (team && number) {
+      const s = await fetch(`${SPORTSDB}/searchteams.php?t=${encodeURIComponent(team)}`);
+      const sj = await s.json();
+      const t = (sj.teams || [])[0];
+      if (!t) return json({ error: "team_not_found", team });
+      const squad = await squadOf(t.idTeam);
+      const p = squad.find((pl) => String(pl.strNumber) === String(number) && isRealPlayer(pl));
+      if (!p) return json({ error: "no_match", team: t.strTeam, number });
+      return json({ player: p.strPlayer, team: t.strTeam, number, position: p.strPosition });
+    }
+
+    // Mode A: name → their number
+    if (name) {
+      const s = await fetch(`${SPORTSDB}/searchplayers.php?p=${encodeURIComponent(name)}`);
+      const sj = await s.json();
+      const p0 = (sj.player || [])[0];
+      if (!p0) return json({ error: "player_not_found", name });
+      let num = p0.strNumber && p0.strNumber !== "null" ? p0.strNumber : null;
+      if (!num && p0.idTeam) {
+        const squad = await squadOf(p0.idTeam);
+        const match = squad.find((pl) => nameMatch(pl.strPlayer, p0.strPlayer));
+        if (match && match.strNumber && match.strNumber !== "null") num = match.strNumber;
+      }
+      return json({
+        player: p0.strPlayer,
+        team: p0.strTeam,
+        number: num,
+        position: p0.strPosition,
+        nationality: p0.strNationality,
+      });
+    }
+
+    return json({ error: "bad_request" }, 400);
+  } catch (err) {
+    console.error("Player error:", err?.message || err);
+    return json({ error: "fetch_failed" }, 502);
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   // Tells the browser which backend is active: claude | ollama | local.
   // Re-detect here so that if EDITH started before Ollama was ready (e.g. at
@@ -262,6 +329,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === "GET" && req.url.startsWith("/api/sports")) return handleSports(req, res);
+  if (req.method === "GET" && req.url.startsWith("/api/player")) return handlePlayer(req, res);
   if (req.method === "GET") return serveStatic(req, res);
   res.writeHead(405).end("Method not allowed");
 });

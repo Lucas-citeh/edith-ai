@@ -26,6 +26,13 @@ const FOOTY_KW = /\b(football|footy|soccer|premier league|prem|epl|champions lea
 const LAST_KW = /\b(last|latest|recent|result|final score|score|won|win|beat|lost|lose|draw|drew|how did|yesterday|did they win)\b/i;
 const NEXT_KW = /\b(next|upcoming|coming up|when|weekend|schedule|who.*play|do they play|are they playing|fixture)\b/i;
 
+// Resolve a chunk of text to a known team name (so "city" → "Manchester City").
+// Returns null if no known team is mentioned.
+export function matchTeam(text) {
+  const m = TEAMS.find((x) => x.rx.test(text));
+  return m ? m.name : null;
+}
+
 function sameTeam(a, b) {
   a = (a || "").toLowerCase();
   b = (b || "").toLowerCase();

@@ -3,6 +3,7 @@
 
 import { edithBrain } from "./brain.js";
 import { trySports } from "./sports.js";
+import { tryPlayer } from "./players.js";
 
 const el = (id) => document.getElementById(id);
 const reactor = el("reactor");
@@ -151,11 +152,12 @@ async function ask(userText) {
   const bubble = addBubble("edith", "");
 
   try {
-    // Football questions get real live data first, whatever brain is active.
-    const sportsReply = await trySports(userText);
+    // Live-data questions (shirt numbers, fixtures, results) get real data
+    // first, whatever brain is active.
+    const liveReply = (await tryPlayer(userText)) || (await trySports(userText));
     let full;
-    if (sportsReply) {
-      full = await typeOut(sportsReply, bubble);
+    if (liveReply) {
+      full = await typeOut(liveReply, bubble);
     } else if (MODE === "server") {
       full = await streamFromServer(bubble);
     } else {
