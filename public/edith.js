@@ -2,6 +2,7 @@
 // wake-word listening, conversation memory, and streaming replies from the server.
 
 import { edithBrain } from "./brain.js";
+import { trySports } from "./sports.js";
 
 const el = (id) => document.getElementById(id);
 const reactor = el("reactor");
@@ -150,9 +151,16 @@ async function ask(userText) {
   const bubble = addBubble("edith", "");
 
   try {
-    const full = MODE === "server"
-      ? await streamFromServer(bubble)
-      : await streamFromLocal(userText, bubble);
+    // Football questions get real live data first, whatever brain is active.
+    const sportsReply = await trySports(userText);
+    let full;
+    if (sportsReply) {
+      full = await typeOut(sportsReply, bubble);
+    } else if (MODE === "server") {
+      full = await streamFromServer(bubble);
+    } else {
+      full = await streamFromLocal(userText, bubble);
+    }
 
     history.push({ role: "assistant", content: full });
     reactor.classList.remove("scanning");
@@ -197,9 +205,9 @@ async function streamFromServer(bubble) {
   return full;
 }
 
-// Offline brain: compute the reply, then "type" it out so it feels alive.
-async function streamFromLocal(userText, bubble) {
-  const reply = await edithBrain(userText, brainMem);
+// "Type" a ready-made reply out word by word so it feels alive (used by the
+// offline brain and the live sports answers).
+async function typeOut(reply, bubble) {
   const words = reply.split(" ");
   let full = "";
   for (let i = 0; i < words.length; i++) {
@@ -211,6 +219,12 @@ async function streamFromLocal(userText, bubble) {
     await sleep(45 + Math.random() * 40);
   }
   return reply;
+}
+
+// Offline brain: compute the reply, then type it out.
+async function streamFromLocal(userText, bubble) {
+  const reply = await edithBrain(userText, brainMem);
+  return typeOut(reply, bubble);
 }
 
 // ---------- Speech recognition (voice input + wake word) ----------
