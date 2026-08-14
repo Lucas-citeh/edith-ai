@@ -22,7 +22,13 @@ export function resolveProvider(env) {
   if (env.GEMINI_API_KEY)
     return { name: "gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", key: env.GEMINI_API_KEY, model: env.AI_MODEL || "gemini-2.0-flash" };
   if (env.OPENROUTER_API_KEY)
-    return { name: "openrouter", url: "https://openrouter.ai/api/v1/chat/completions", key: env.OPENROUTER_API_KEY, model: env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct:free" };
+    return {
+      name: "openrouter",
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      key: env.OPENROUTER_API_KEY,
+      model: env.AI_MODEL || "google/gemma-4-31b-it:free",
+      headers: { "HTTP-Referer": "https://edith-ai.pages.dev", "X-Title": "EDITH" },
+    };
   return null;
 }
 
@@ -51,6 +57,7 @@ export async function onRequestPost({ request, env }) {
     headers: {
       Authorization: `Bearer ${provider.key}`,
       "Content-Type": "application/json",
+      ...(provider.headers || {}),
     },
     body: JSON.stringify({
       model: provider.model,
