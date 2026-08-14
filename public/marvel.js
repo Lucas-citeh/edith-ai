@@ -26,6 +26,75 @@ function extractName(text) {
   return null;
 }
 
+async function fetchHero(name) {
+  try {
+    const res = await fetch(`/api/marvel?name=${encodeURIComponent(name)}`);
+    const d = await res.json();
+    return d && d.name ? d : null;
+  } catch {
+    return null;
+  }
+}
+
+const STAT_KEYS = ["intelligence", "strength", "speed", "durability", "power", "combat"];
+const total = (p) => STAT_KEYS.reduce((s, k) => s + (parseInt(p?.[k], 10) || 0), 0);
+
+function stripName(s) {
+  return clean(s)
+    .replace(/^\s*in\s+a\s+fight\s+/i, "")
+    // leading "who would win ", "who wins ", "would ", "will "
+    .replace(/^\s*(?:who(?:'?s)?\s+)?(?:would\s+|will\s+|d\s+)?(?:win|beat|defeat)\s+/i, "")
+    .replace(/^\s*(?:who(?:'?s)?|would|will)\s+/i, "")
+    // trailing "who would win", "would win", "in a fight"
+    .replace(/\s+who\b.*$/i, "")
+    .replace(/\s+(?:would|will)\s+win.*$/i, "")
+    .replace(/\s+in a fight.*$/i, "")
+    .replace(/[?!.]+$/, "")
+    .trim();
+}
+
+// "Who would win, Hulk or Thor?", "Iron Man vs Thanos", "would Spider-Man beat Venom?"
+export async function tryBattle(text) {
+  const t = text.trim();
+  let m, a, b;
+  if ((m = t.match(/\bbetween\s+(.+?)\s+and\s+(.+)/i))) [, a, b] = m;
+  else if ((m = t.match(/\bwould\s+(.+?)\s+(?:beat|defeat|destroy|win against)\s+(.+)/i))) [, a, b] = m;
+  else if ((m = t.match(/\b(.+?)\s+(?:vs\.?|versus)\s+(.+)/i))) [, a, b] = m;
+  else if ((m = t.match(/\bwin.*?\b(.+?)\s+or\s+(.+)/i))) [, a, b] = m;
+  if (!a || !b) return null;
+
+  a = stripName(a);
+  b = stripName(b);
+  if (!a || !b) return null;
+
+  const [da, db] = await Promise.all([fetchHero(a), fetchHero(b)]);
+  if (!da || !db) return null; // not both heroes — let sports/AI handle it
+
+  const ta = total(da.powerstats);
+  const tb = total(db.powerstats);
+  const winA = [];
+  const winB = [];
+  for (const k of STAT_KEYS) {
+    const va = parseInt(da.powerstats?.[k], 10) || 0;
+    const vb = parseInt(db.powerstats?.[k], 10) || 0;
+    if (va > vb) winA.push(k);
+    else if (vb > va) winB.push(k);
+  }
+
+  if (ta === tb) {
+    return `Dead even, boss — ${da.name} and ${db.name} both score ${ta} across the board. Too close to call.`;
+  }
+  const win = ta > tb ? da : db;
+  const lose = ta > tb ? db : da;
+  const winCats = (ta > tb ? winA : winB).slice(0, 3).join(", ");
+  const loseCats = (ta > tb ? winB : winA).slice(0, 2).join(" and ");
+  const edge = Math.abs(ta - tb) <= 20 ? "just edges it" : "takes it comfortably";
+  let out = `Tale of the tape — ${da.name} scores ${ta}, ${db.name} scores ${tb}. My analysis: ${win.name} ${edge}, boss.`;
+  if (winCats) out += ` ${win.name} wins on ${winCats}.`;
+  if (loseCats) out += ` ${lose.name} takes ${loseCats}.`;
+  return out;
+}
+
 // Returns a spoken answer, or null if this isn't a superhero question.
 export async function tryMarvel(text) {
   if (!HEROES.test(text) && !HERO_KW.test(text)) return null;

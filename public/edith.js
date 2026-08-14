@@ -4,7 +4,7 @@
 import { edithBrain } from "./brain.js";
 import { trySports } from "./sports.js";
 import { tryPlayer } from "./players.js";
-import { tryMarvel } from "./marvel.js";
+import { tryMarvel, tryBattle } from "./marvel.js";
 
 const el = (id) => document.getElementById(id);
 const reactor = el("reactor");
@@ -190,6 +190,7 @@ async function ask(userText) {
       tryClock(userText) ||
       (await tryPlayer(userText)) ||
       (await trySports(userText)) ||
+      (await tryBattle(userText)) ||
       (await tryMarvel(userText));
     let full;
     if (liveReply) {
