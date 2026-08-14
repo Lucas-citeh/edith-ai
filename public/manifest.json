@@ -1,0 +1,15 @@
+{
+  "name": "EDITH",
+  "short_name": "EDITH",
+  "description": "Even Dead, I'm The Hero — your holographic voice AI.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#01060c",
+  "theme_color": "#01060c",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

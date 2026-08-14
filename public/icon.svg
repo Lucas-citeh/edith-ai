@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#062133"/>
+      <stop offset="100%" stop-color="#01060c"/>
+    </radialGradient>
+    <radialGradient id="core" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d6faff"/>
+      <stop offset="45%" stop-color="#5cf0ff"/>
+      <stop offset="100%" stop-color="#0a2a3a"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <g fill="none" stroke="#5cf0ff" filter="url(#glow)">
+    <circle cx="256" cy="256" r="180" stroke-width="4" stroke-opacity="0.55" stroke-dasharray="10 14"/>
+    <circle cx="256" cy="256" r="140" stroke-width="6" stroke-opacity="0.85" stroke-dasharray="200 60"/>
+    <circle cx="256" cy="256" r="104" stroke-width="3" stroke-opacity="0.5"/>
+  </g>
+
+  <g stroke="#5cf0ff" stroke-width="3" stroke-opacity="0.6">
+    <line x1="256" y1="52" x2="256" y2="74"/>
+    <line x1="256" y1="438" x2="256" y2="460"/>
+    <line x1="52" y1="256" x2="74" y2="256"/>
+    <line x1="438" y1="256" x2="460" y2="256"/>
+  </g>
+
+  <circle cx="256" cy="256" r="72" fill="url(#core)" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="34" fill="#eafeff"/>
+  <text x="256" y="268" text-anchor="middle" font-family="Orbitron, Arial, sans-serif"
+        font-size="34" font-weight="900" fill="#01202b" letter-spacing="2">E</text>
+</svg>
