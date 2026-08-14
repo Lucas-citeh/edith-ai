@@ -27,6 +27,14 @@ export function resolveProvider(env) {
       url: "https://openrouter.ai/api/v1/chat/completions",
       key: env.OPENROUTER_API_KEY,
       model: env.AI_MODEL || "google/gemma-4-31b-it:free",
+      // Tried in order until one free model has capacity.
+      fallbacks: [
+        "google/gemma-4-31b-it:free",
+        "openai/gpt-oss-20b:free",
+        "nvidia/nemotron-nano-9b-v2:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "google/gemma-4-26b-a4b-it:free",
+      ],
       headers: { "HTTP-Referer": "https://edith-ai.pages.dev", "X-Title": "EDITH" },
     };
   return null;
@@ -52,27 +60,37 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  const upstream = await fetch(provider.url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${provider.key}`,
-      "Content-Type": "application/json",
-      ...(provider.headers || {}),
-    },
-    body: JSON.stringify({
-      model: provider.model,
-      stream: true,
-      max_tokens: 1024,
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-    }),
-  });
+  // Free OpenRouter models get congested; try a few until one is available.
+  const models =
+    provider.name === "openrouter" && !env.AI_MODEL ? provider.fallbacks : [provider.model];
 
-  if (!upstream.ok || !upstream.body) {
-    const detail = await upstream.text().catch(() => "");
+  const body = { stream: true, max_tokens: 1024, messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages] };
+  let upstream = null;
+  let lastStatus = 0;
+  let lastDetail = "";
+  for (const model of models) {
+    const r = await fetch(provider.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${provider.key}`,
+        "Content-Type": "application/json",
+        ...(provider.headers || {}),
+      },
+      body: JSON.stringify({ ...body, model }),
+    });
+    if (r.ok && r.body) {
+      upstream = r;
+      break;
+    }
+    lastStatus = r.status;
+    lastDetail = await r.text().catch(() => "");
+  }
+
+  if (!upstream) {
     const msg =
-      upstream.status === 429
-        ? "I'm getting a lot of requests right now — the free AI limit is maxed out. Give it a minute and try again, boss."
-        : `[EDITH cloud-brain fault: ${upstream.status}. ${detail.slice(0, 200)}]`;
+      lastStatus === 429
+        ? `I can't reach a free model right now — they're all busy (429). ${lastDetail.slice(0, 180)}`
+        : `[EDITH cloud-brain fault: ${lastStatus}. ${lastDetail.slice(0, 200)}]`;
     return new Response(`\n\n${msg}`, {
       status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
